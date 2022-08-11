@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/api/transaction")
@@ -125,5 +126,41 @@ public class TransactionRestController
             else
                 return Mono.just(ResponseHandler.response("Not found", HttpStatus.NOT_FOUND, null));
         }).doFinally(fin -> log.info("[END] delete Transaction"));
+    }
+
+    @GetMapping("/clientTransactions/{idClient}")
+    public Mono<ResponseEntity<Object>> findByIdClient(@PathVariable String idClient)
+    {
+        log.info("[INI] findByIdClient Transaction");
+        return dao.findAll()
+                .filter(transaction ->
+                        transaction.getClientId().equals(idClient)
+                )
+                .collectList()
+                .doOnNext(transaction -> log.info(transaction.toString()))
+                .map(movements -> ResponseHandler.response("Done", HttpStatus.OK, movements))
+                .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)))
+                .switchIfEmpty(Mono.just(ResponseHandler.response("No Content", HttpStatus.BAD_REQUEST, null)))
+                .doFinally(fin -> log.info("[END] findByIdClient transaction"));
+    }
+
+    @GetMapping("/balance/{idClient}")
+    public Mono<ResponseEntity<Object>> getBalance(@PathVariable("idClient") String idClient)
+    {
+        log.info("[INI] getBalance transaction");
+        log.info(idClient);
+        AtomicReference<Float> balance = new AtomicReference<>((float) 0);
+        return dao.findAll()
+                .doOnNext(transaction -> {
+                    if(transaction.getClientId().equals(idClient)) {
+                        balance.set(balance.get() + transaction.getMont());
+                        log.info(transaction.toString());
+                    }
+                })
+                .collectList()
+                .map(movements -> ResponseHandler.response("Done", HttpStatus.OK, balance.get()))
+                .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)))
+                .switchIfEmpty(Mono.just(ResponseHandler.response("No Content", HttpStatus.BAD_REQUEST, null)))
+                .doFinally(fin -> log.info("[END] getBalance transaction"));
     }
 }
