@@ -1,10 +1,10 @@
 package com.bank.transaction.services;
 
-import com.bank.transaction.models.utils.ResponseService;
+import com.bank.transaction.models.utils.ResponseActive;
 import reactor.core.publisher.Mono;
 
 
 public interface ActiveService {
 
-    Mono<ResponseService> findByCode(String id);
+    Mono<ResponseActive> findByCode(String id);
 }

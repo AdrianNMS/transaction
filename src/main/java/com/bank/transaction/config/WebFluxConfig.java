@@ -19,11 +19,17 @@ import reactor.netty.http.client.HttpClient;
 @EnableWebFlux
 public class WebFluxConfig implements WebFluxConfigurer
 {
-	@Value("${app.module.service.url}")
-	private String url;
+	@Value("${app.module.parameter.service.url}")
+	private String urlParameter;
+
+	@Value("${app.module.client.service.url}")
+	private String urlClient;
+
+	@Value("${app.module.active.service.url}")
+	private String urlActive;
 
 	@Bean
-	public WebClient getWebClient()
+	public WebClient getWebClientParameter()
 	{
 		HttpClient httpClient = HttpClient.create()
 		        .tcpConfiguration(client ->
@@ -35,9 +41,47 @@ public class WebFluxConfig implements WebFluxConfigurer
 		ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient.wiretap(true));	    
 
 		return WebClient.builder()
-		        .baseUrl(url)
+		        .baseUrl(urlParameter)
 		        .clientConnector(connector)
 		        .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 		        .build();
+	}
+
+	@Bean
+	public WebClient getWebClientC()
+	{
+		HttpClient httpClient = HttpClient.create()
+				.tcpConfiguration(client ->
+						client.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+								.doOnConnected(conn -> conn
+										.addHandlerLast(new ReadTimeoutHandler(10))
+										.addHandlerLast(new WriteTimeoutHandler(10))));
+
+		ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient.wiretap(true));
+
+		return WebClient.builder()
+				.baseUrl(urlClient)
+				.clientConnector(connector)
+				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.build();
+	}
+
+	@Bean
+	public WebClient getWebClientActive()
+	{
+		HttpClient httpClient = HttpClient.create()
+				.tcpConfiguration(client ->
+						client.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+								.doOnConnected(conn -> conn
+										.addHandlerLast(new ReadTimeoutHandler(10))
+										.addHandlerLast(new WriteTimeoutHandler(10))));
+
+		ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient.wiretap(true));
+
+		return WebClient.builder()
+				.baseUrl(urlActive)
+				.clientConnector(connector)
+				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.build();
 	}
 }

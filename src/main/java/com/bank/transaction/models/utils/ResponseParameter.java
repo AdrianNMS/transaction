@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ResponseService
+public class ResponseParameter
 {
     private List<Parameter> data;
 
