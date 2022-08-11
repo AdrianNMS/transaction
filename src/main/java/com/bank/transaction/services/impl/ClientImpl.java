@@ -20,7 +20,7 @@ public class ClientImpl implements ClientService {
     public Mono<ResponseClient> findByCode(String id)
     {
         return webClient.get()
-                .uri("/api/Client/"+ id)
+                .uri("/api/client/"+ id)
                 .retrieve()
                 .bodyToMono(ResponseClient.class);
     }
