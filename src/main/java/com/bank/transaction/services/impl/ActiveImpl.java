@@ -1,7 +1,7 @@
 package com.bank.transaction.services.impl;
 
-import com.bank.transaction.Mont;
-import com.bank.transaction.ResponseMont;
+import com.bank.transaction.models.utils.Mont;
+import com.bank.transaction.models.utils.ResponseMont;
 import com.bank.transaction.models.utils.ResponseActive;
 import com.bank.transaction.services.ActiveService;
 import org.springframework.beans.factory.annotation.Autowired;

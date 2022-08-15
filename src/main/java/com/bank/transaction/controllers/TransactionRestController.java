@@ -1,6 +1,6 @@
 package com.bank.transaction.controllers;
 
-import com.bank.transaction.Mont;
+import com.bank.transaction.models.utils.Mont;
 import com.bank.transaction.handler.ResponseHandler;
 import com.bank.transaction.models.dao.TransactionDao;
 import com.bank.transaction.models.documents.Transaction;
