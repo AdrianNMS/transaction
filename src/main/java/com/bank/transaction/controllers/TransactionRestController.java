@@ -1,5 +1,6 @@
 package com.bank.transaction.controllers;
 
+import com.bank.transaction.Mont;
 import com.bank.transaction.handler.ResponseHandler;
 import com.bank.transaction.models.dao.TransactionDao;
 import com.bank.transaction.models.documents.Transaction;
@@ -68,32 +69,62 @@ public class TransactionRestController
         }
 
         String finalTypeName = typeName;
+
         return activeService.findByCode(tran.getActiveId())
                 .doOnNext(transaction -> log.info(transaction.toString())).
                 flatMap(responseActive -> {
+                    log.info(tran.toString());
+
                     if(responseActive.getData()==null){
                         return Mono.just(ResponseHandler.response("Does not have active", HttpStatus.BAD_REQUEST, null));
                     }
+                    else
+                        return activeService.getMont(tran.getActiveId(),tran.getCreditId()).flatMap(
+                                responseMont -> {
+                                    if(responseMont.getData()!=null)
+                                    {
+                                        float montDiference = responseMont.getData().getMont() - tran.getMont();
 
-                    return clientService.findByCode(tran.getClientId())
-                            .doOnNext(transaction -> log.info(transaction.toString()))
-                            .flatMap(responseClient -> {
-                                if(responseClient.getData() == null){
-                                    return Mono.just(ResponseHandler.response("Does not have client", HttpStatus.BAD_REQUEST, null));
+                                        Mont mont = new Mont();
+                                        mont.setMont(montDiference);
+
+                                        if(montDiference>0)
+                                        {
+                                            return clientService.findByCode(tran.getClientId())
+                                                    .doOnNext(transaction -> log.info(transaction.toString()))
+                                                    .flatMap(responseClient -> {
+                                                        if(responseClient.getData() == null){
+                                                            return Mono.just(ResponseHandler.response("Does not have client", HttpStatus.BAD_REQUEST, null));
+                                                        }
+
+                                                        if(!finalTypeName.equals(responseClient.getData().getType())){
+                                                            return Mono.just(ResponseHandler.response("The Active is not enabled for the client", HttpStatus.BAD_REQUEST, null));
+                                                        }
+                                                        tran.setDateRegister(LocalDateTime.now());
+
+                                                        return activeService.setMont(tran.getActiveId(),tran.getCreditId(),mont)
+                                                                .flatMap(responseMont1 -> {
+                                                                    if(responseMont1.getStatus().equals("OK"))
+                                                                        return dao.save(tran)
+                                                                                .doOnNext(transaction -> log.info(transaction.toString()))
+                                                                                .map(transaction -> ResponseHandler.response("Done", HttpStatus.OK, transaction)                )
+                                                                                .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)));
+                                                                    else
+                                                                        return Mono.just(ResponseHandler.response("Not Found", HttpStatus.BAD_REQUEST, null));
+                                                                });
+
+                                                    });
+
+                                        }
+                                        else
+                                            return Mono.just(ResponseHandler.response("You don't have enough credit", HttpStatus.BAD_REQUEST, null));
+
+                                    }
+                                    else
+                                        return Mono.just(ResponseHandler.response("Not Found", HttpStatus.BAD_REQUEST, null));
+
                                 }
-
-                                if(!finalTypeName.equals(responseClient.getData().getType())){
-                                    return Mono.just(ResponseHandler.response("The Active is not enabled for the client", HttpStatus.BAD_REQUEST, null));
-                                }
-                                tran.setDateRegister(LocalDateTime.now());
-                                return dao.save(tran)
-                                        .doOnNext(transaction -> log.info(transaction.toString()))
-                                        .map(transaction -> ResponseHandler.response("Done", HttpStatus.OK, transaction)                )
-                                        .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)))
-                                        ;
-                            })
-                            .switchIfEmpty(Mono.just(ResponseHandler.response("Client No Content", HttpStatus.BAD_REQUEST, null)));
-
+                        );
                 })
                 .switchIfEmpty(Mono.just(ResponseHandler.response("Active No Content", HttpStatus.BAD_REQUEST, null)))
                 .doFinally(fin -> log.info("[END] create Transaction"));
@@ -146,23 +177,24 @@ public class TransactionRestController
                 .doFinally(fin -> log.info("[END] findByIdClient transaction"));
     }
 
-    @GetMapping("/balance/{idClient}")
-    public Mono<ResponseEntity<Object>> getBalance(@PathVariable("idClient") String idClient)
+    @GetMapping("/balance/{id}/{idCredit}")
+    public Mono<ResponseEntity<Object>> getBalance(@PathVariable("id") String id, @PathVariable("idCredit") String idCredit)
     {
+        LocalDateTime dateNow = LocalDateTime.now();
         log.info("[INI] getBalance transaction");
-        log.info(idClient);
+        log.info(id);
         AtomicReference<Float> balance = new AtomicReference<>((float) 0);
         return dao.findAll()
-                .doOnNext(transaction -> {
-                    if(transaction.getClientId().equals(idClient)) {
-                        balance.set(balance.get() + transaction.getMont());
-                        log.info(transaction.toString());
-                    }
-                })
+                .filter(transaction ->
+                        transaction.getDateRegister().getMonthValue() == dateNow.getMonthValue()
+                                && transaction.getDateRegister().getYear() == dateNow.getYear() &&
+                                (transaction.getActiveId().equals(id) && transaction.getCreditId().equals(idCredit))
+                )
                 .collectList()
-                .map(movements -> ResponseHandler.response("Done", HttpStatus.OK, balance.get()))
+                .map(transactions -> ResponseHandler.response("Done", HttpStatus.OK, balance.get()))
                 .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)))
                 .switchIfEmpty(Mono.just(ResponseHandler.response("No Content", HttpStatus.BAD_REQUEST, null)))
                 .doFinally(fin -> log.info("[END] getBalance transaction"));
     }
+
 }
