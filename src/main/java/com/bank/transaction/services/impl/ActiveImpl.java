@@ -19,10 +19,10 @@ public class ActiveImpl implements ActiveService {
     WebClient webClient;
 
     @Override
-    public Mono<ResponseActive> findByCode(String id)
+    public Mono<ResponseActive> findType(Integer type,String id)
     {
         return webClient.get()
-                .uri("/api/active/"+ id)
+                .uri("/api/active/"+type+"/"+ id)
                 .retrieve()
                 .bodyToMono(ResponseActive.class);
     }

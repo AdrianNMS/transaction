@@ -1,5 +1,6 @@
 package com.bank.transaction.models.documents;
 
+import com.bank.transaction.models.enums.TypeTransaction;
 import com.bank.transaction.models.utils.Audit;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -21,6 +22,9 @@ public class Transaction extends Audit
     private String creditId;
     @NotNull(message = "mont must not be null")
     private float mont;
+    @NotNull(message = "typeTransaction must not be null")
+    private TypeTransaction typeTransaction;
+
     private String seller;
     private String ruc;
 
