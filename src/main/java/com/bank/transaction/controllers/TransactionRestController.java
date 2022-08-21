@@ -6,6 +6,7 @@ import com.bank.transaction.handler.ResponseHandler;
 import com.bank.transaction.models.dao.TransactionDao;
 import com.bank.transaction.models.documents.Transaction;
 import com.bank.transaction.services.ActiveService;
+import com.bank.transaction.services.ClientService;
 import com.bank.transaction.services.TransactionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,8 @@ public class TransactionRestController
     private ActiveService activeService;
     @Autowired
     private TransactionService transactionService;
+    @Autowired
+    private ClientService clientService;
     @GetMapping
     public Mono<ResponseEntity<Object>> findAll()
     {
@@ -52,11 +55,11 @@ public class TransactionRestController
     }
 
     @PostMapping()
-    public Mono<ResponseEntity<Object>> create(@PathVariable("type") String type,@Valid @RequestBody Transaction tran)
+    public Mono<ResponseEntity<Object>> create(@Valid @RequestBody Transaction tran)
     {
         log.info("[INI] create Transaction");
 
-        return TransactionRestControllerCreate.CreateTransactionSequence(tran,log,transactionService,activeService)
+        return TransactionRestControllerCreate.CreateTransactionSequence(tran,log,transactionService,activeService,clientService)
                 .doFinally(fin -> log.info("[END] create Transaction"));
     }
 

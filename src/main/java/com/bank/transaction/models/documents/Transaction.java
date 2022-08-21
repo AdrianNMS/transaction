@@ -22,7 +22,7 @@ public class Transaction extends Audit
     private String creditId;
     @NotNull(message = "mont must not be null")
     private float mont;
-    @NotNull(message = "typeTransaction must not be null")
+
     private TypeTransaction typeTransaction;
 
     private String seller;

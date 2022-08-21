@@ -2,8 +2,10 @@ package com.bank.transaction.controllers.helpers;
 
 import com.bank.transaction.handler.ResponseHandler;
 import com.bank.transaction.models.documents.Transaction;
+import com.bank.transaction.models.enums.TypeTransaction;
 import com.bank.transaction.models.utils.Mont;
 import com.bank.transaction.services.ActiveService;
+import com.bank.transaction.services.ClientService;
 import com.bank.transaction.services.TransactionService;
 import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,7 @@ public class TransactionRestControllerCreate
     {
         return transactionService.getDebtMonth(tran.getActiveId(), tran.getCreditId())
                 .flatMap(debt -> {
+                    log.info(debt.toString());
                     float currentMont = mont.getMont() - (debt + tran.getMont());
 
                     if(currentMont>0)
@@ -43,6 +46,7 @@ public class TransactionRestControllerCreate
                 .flatMap(responseMont -> {
                     if(responseMont.getData()!=null)
                     {
+                        log.info(responseMont.toString());
                         return CheckDebt(tran,log,transactionService,responseMont.getData());
                     }
                     else
@@ -55,6 +59,7 @@ public class TransactionRestControllerCreate
         return activeService.findType(tran.getTypeTransaction().getValue(),tran.getActiveId())
                 .flatMap(responseActive ->
                 {
+                    log.info(responseActive.toString());
                     if(responseActive.getData())
                         return CheckCreditMont(tran, log, transactionService,activeService);
 
@@ -63,9 +68,26 @@ public class TransactionRestControllerCreate
                 });
     }
 
-    public static Mono<ResponseEntity<Object>> CreateTransactionSequence(Transaction tran, Logger log, TransactionService transactionService, ActiveService activeService)
+    public static Mono<ResponseEntity<Object>> getClientType(Transaction tran, Logger log, TransactionService transactionService, ActiveService activeService, ClientService clientService)
     {
-        return CheckActiveType(tran, log, transactionService,activeService);
+        log.info(tran.toString());
+        return clientService.getType(tran.getClientId())
+                .flatMap(responseClient -> {
+                    log.info(responseClient.toString());
+                    if(responseClient.getData()!=null)
+                    {
+                        log.info(responseClient.toString());
+                        tran.setTypeTransaction(TypeTransaction.fromInteger(responseClient.getData()));
+                        return CheckActiveType(tran, log, transactionService,activeService);
+                    }
+                    else
+                        return Mono.just(ResponseHandler.response("Empty", HttpStatus.BAD_REQUEST, null));
+                });
+    }
+
+    public static Mono<ResponseEntity<Object>> CreateTransactionSequence(Transaction tran, Logger log, TransactionService transactionService, ActiveService activeService, ClientService clientService)
+    {
+        return getClientType(tran, log, transactionService,activeService,clientService);
     }
 
 }

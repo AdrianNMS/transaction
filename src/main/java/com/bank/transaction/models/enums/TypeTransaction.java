@@ -14,9 +14,9 @@ public enum TypeTransaction
 
     public static TypeTransaction fromInteger(int val) {
         switch(val) {
-            case 2002:
+            case 0:
                 return PERSONAL;
-            case 2003:
+            case 1:
                 return COMPANY;
 
         }
