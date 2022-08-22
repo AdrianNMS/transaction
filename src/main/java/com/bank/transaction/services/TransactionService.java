@@ -15,4 +15,5 @@ public interface TransactionService
     Mono<List<Transaction>> findByIdClient(String id);
     Mono<Float> getBalance(String id, String idCredit);
     Mono<Float> getTotalBalance(String id, String idCredit);
+    Mono<Float> getTotalBalanceClient(String idClient);
 }

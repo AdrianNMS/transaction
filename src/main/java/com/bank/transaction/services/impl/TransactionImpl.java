@@ -9,6 +9,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class TransactionImpl implements TransactionService
@@ -56,8 +57,13 @@ public class TransactionImpl implements TransactionService
     }
 
     @Override
-    public Mono<List<Transaction>> findByIdClient(String id) {
-        return null;
+    public Mono<List<Transaction>> findByIdClient(String idClient) {
+        return findAll()
+                .flatMap(transactions ->
+                        Mono.just(transactions.stream()
+                                .filter(transaction -> transaction.getClientId().equals(idClient))
+                                .collect(Collectors.toList()))
+                );
     }
 
     @Override
@@ -94,5 +100,15 @@ public class TransactionImpl implements TransactionService
                                 .mapToDouble(Transaction::getMont)
                                 .sum()
                         ));
+    }
+
+    @Override
+    public Mono<Float> getTotalBalanceClient(String idClient) {
+        return findByIdClient(idClient).flatMap(transactions ->
+                Mono.just((float)transactions
+                        .stream()
+                        .mapToDouble(Transaction::getMont)
+                        .sum())
+        );
     }
 }

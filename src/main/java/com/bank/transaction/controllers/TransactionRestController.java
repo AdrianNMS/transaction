@@ -120,4 +120,17 @@ public class TransactionRestController
                 .doFinally(fin -> log.info("[END] getDebt transaction"));
     }
 
+    @GetMapping("/balance/client/{idClient}")
+    public Mono<ResponseEntity<Object>> getBalanceClient(@PathVariable("idClient") String idClient)
+    {
+        log.info("[INI] getBalanceClient");
+        log.info(idClient);
+
+        return transactionService.getTotalBalanceClient(idClient)
+                .flatMap(balance -> Mono.just(ResponseHandler.response("Done", HttpStatus.OK, balance)))
+                .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)))
+                .switchIfEmpty(Mono.just(ResponseHandler.response("No Content", HttpStatus.BAD_REQUEST, null)))
+                .doFinally(fin -> log.info("[END] getBalanceClient"));
+    }
+
 }
