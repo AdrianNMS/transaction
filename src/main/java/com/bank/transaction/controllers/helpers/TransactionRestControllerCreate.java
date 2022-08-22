@@ -28,12 +28,12 @@ public class TransactionRestControllerCreate
 
     public static Mono<ResponseEntity<Object>> CheckDebt(Transaction tran, Logger log, TransactionService transactionService, Mont mont)
     {
-        return transactionService.getDebtMonth(tran.getActiveId(), tran.getCreditId())
+        return transactionService.getBalance(tran.getActiveId(), tran.getCreditId())
                 .flatMap(debt -> {
                     log.info(debt.toString());
                     float currentMont = mont.getMont() - (debt + tran.getMont());
 
-                    if(currentMont>0)
+                    if(currentMont>=0)
                         return createPayment(tran, log, transactionService);
                     else
                         return Mono.just(ResponseHandler.response("You don't have enough credits", HttpStatus.BAD_REQUEST, null));
@@ -56,38 +56,23 @@ public class TransactionRestControllerCreate
 
     public static Mono<ResponseEntity<Object>> CheckActiveType(Transaction tran, Logger log, TransactionService transactionService, ActiveService activeService)
     {
-        return activeService.findType(tran.getTypeTransaction().getValue(),tran.getActiveId())
+        return activeService.findType(tran.getActiveId())
                 .flatMap(responseActive ->
                 {
                     log.info(responseActive.toString());
-                    if(responseActive.getData())
+                    if(responseActive.getData()!=null)
+                    {
+                        tran.setTypeTransaction(TypeTransaction.fromInteger(responseActive.getData()));
                         return CheckCreditMont(tran, log, transactionService,activeService);
-
+                    }
                     else
                         return Mono.just(ResponseHandler.response("Active Not Found", HttpStatus.BAD_REQUEST, null));
                 });
     }
 
-    public static Mono<ResponseEntity<Object>> getClientType(Transaction tran, Logger log, TransactionService transactionService, ActiveService activeService, ClientService clientService)
+    public static Mono<ResponseEntity<Object>> CreateTransactionSequence(Transaction tran, Logger log, TransactionService transactionService, ActiveService activeService)
     {
-        log.info(tran.toString());
-        return clientService.getType(tran.getClientId())
-                .flatMap(responseClient -> {
-                    log.info(responseClient.toString());
-                    if(responseClient.getData()!=null)
-                    {
-                        log.info(responseClient.toString());
-                        tran.setTypeTransaction(TypeTransaction.fromInteger(responseClient.getData()));
-                        return CheckActiveType(tran, log, transactionService,activeService);
-                    }
-                    else
-                        return Mono.just(ResponseHandler.response("Empty", HttpStatus.BAD_REQUEST, null));
-                });
-    }
-
-    public static Mono<ResponseEntity<Object>> CreateTransactionSequence(Transaction tran, Logger log, TransactionService transactionService, ActiveService activeService, ClientService clientService)
-    {
-        return getClientType(tran, log, transactionService,activeService,clientService);
+        return CheckActiveType(tran, log, transactionService,activeService);
     }
 
 }

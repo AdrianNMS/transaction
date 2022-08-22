@@ -59,7 +59,7 @@ public class TransactionRestController
     {
         log.info("[INI] create Transaction");
 
-        return TransactionRestControllerCreate.CreateTransactionSequence(tran,log,transactionService,activeService,clientService)
+        return TransactionRestControllerCreate.CreateTransactionSequence(tran,log,transactionService,activeService)
                 .doFinally(fin -> log.info("[END] create Transaction"));
     }
 
@@ -105,6 +105,19 @@ public class TransactionRestController
                 .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)))
                 .switchIfEmpty(Mono.just(ResponseHandler.response("No Content", HttpStatus.BAD_REQUEST, null)))
                 .doFinally(fin -> log.info("[END] getBalance transaction"));
+    }
+
+    @GetMapping("/debt/{id}/{idCredit}")
+    public Mono<ResponseEntity<Object>> getDebt(@PathVariable("id") String id, @PathVariable("idCredit") String idCredit)
+    {
+        log.info("[INI] getDebt transaction");
+        log.info(id);
+
+        return transactionService.getTotalBalance(id,idCredit)
+                .flatMap(balance -> Mono.just(ResponseHandler.response("Done", HttpStatus.OK, balance)))
+                .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)))
+                .switchIfEmpty(Mono.just(ResponseHandler.response("No Content", HttpStatus.BAD_REQUEST, null)))
+                .doFinally(fin -> log.info("[END] getDebt transaction"));
     }
 
 }

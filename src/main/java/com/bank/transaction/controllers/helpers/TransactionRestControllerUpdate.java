@@ -24,9 +24,10 @@ public class TransactionRestControllerUpdate
                 .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)));
     }
 
+    //borrar
     public static Mono<ResponseEntity<Object>> CheckDebt(String id, Transaction tran, Logger log, TransactionService transactionService, Mont mont, Transaction oldTransaction)
     {
-        return transactionService.getDebtMonth(tran.getActiveId(), tran.getCreditId())
+        return transactionService.getBalance(tran.getActiveId(), tran.getCreditId())
                 .flatMap(debt -> {
                     float currentMont = mont.getMont() - (debt + (tran.getMont() - oldTransaction.getMont()));
 
