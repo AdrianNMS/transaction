@@ -1,7 +1,6 @@
 package com.bank.transaction.controllers;
 
 import com.bank.transaction.controllers.helpers.TransactionRestControllerCreate;
-import com.bank.transaction.controllers.helpers.TransactionRestControllerUpdate;
 import com.bank.transaction.handler.ResponseHandler;
 import com.bank.transaction.models.dao.TransactionDao;
 import com.bank.transaction.models.documents.Transaction;
@@ -61,14 +60,6 @@ public class TransactionRestController
 
         return TransactionRestControllerCreate.CreateTransactionSequence(tran,log,transactionService,activeService)
                 .doFinally(fin -> log.info("[END] create Transaction"));
-    }
-
-    @PutMapping("/{id}")
-    public Mono<ResponseEntity<Object>> update(@PathVariable("id") String id, @RequestBody Transaction tran)
-    {
-        log.info("[INI] update Transaction");
-        return TransactionRestControllerUpdate.UpdateTransactionSequence(id,tran,log,transactionService,activeService)
-                .doFinally(fin -> log.info("[END] update Transaction"));
     }
 
     @DeleteMapping("/{id}")
