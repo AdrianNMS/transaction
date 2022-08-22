@@ -4,6 +4,7 @@ import com.bank.transaction.controllers.helpers.TransactionRestControllerCreate;
 import com.bank.transaction.handler.ResponseHandler;
 import com.bank.transaction.models.dao.TransactionDao;
 import com.bank.transaction.models.documents.Transaction;
+import com.bank.transaction.models.enums.TypeTransaction;
 import com.bank.transaction.services.ActiveService;
 import com.bank.transaction.services.ClientService;
 import com.bank.transaction.services.TransactionService;
@@ -12,10 +13,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/transaction")
@@ -122,6 +125,28 @@ public class TransactionRestController
                 .onErrorResume(error -> Mono.just(ResponseHandler.response(error.getMessage(), HttpStatus.BAD_REQUEST, null)))
                 .switchIfEmpty(Mono.just(ResponseHandler.response("No Content", HttpStatus.BAD_REQUEST, null)))
                 .doFinally(fin -> log.info("[END] getBalanceClient"));
+    }
+
+    @GetMapping("/report/credit/{idCreditCard}")
+    public Mono<ResponseEntity<Object>> getFist10MovementCreditCard(@Validated @PathVariable String idCreditCard)
+    {
+        log.info("[INI] getFist10MovementCreditCard Movement");
+        return transactionService.findAll()
+                .flatMap(transactions -> {
+                    var listTran = transactions.stream().filter(transaction ->
+                                            (transaction.getTypeTransaction() == TypeTransaction.COMPANY_CREDIT_CARD
+                                            || transaction.getTypeTransaction() == TypeTransaction.PERSONAL_CREDIT_CARD) &&
+                                    transaction.getActiveId().equals(idCreditCard)
+                            )
+                            .limit(10)
+                            .collect(Collectors.toList());
+
+                    if(!listTran.isEmpty())
+                        return Mono.just(ResponseHandler.response("Done", HttpStatus.OK, listTran));
+                    else
+                        return Mono.just(ResponseHandler.response("Empty", HttpStatus.NOT_FOUND, null));
+                })
+                .doFinally(fin -> log.info("[END] getFist10MovementCreditCard Movement"));
     }
 
 }
